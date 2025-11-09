@@ -1,0 +1,57 @@
+name: Multi-Platform Matrix Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [14, 16, 18]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: matrix-18ff4fd
+        run: |
+          echo "Building for Node.js version ${{ matrix.node-version }}"
+          echo "Platform: ${{ runner.os }}"
+          echo "Runner: ${{ runner.name }}"
+          echo "Matrix variant: node-${{ matrix.node-version }}"
+      
+      - name: Generate build artifact
+        run: |
+          mkdir -p dist
+          cat > dist/build-info.json << EOF
+          {
+            "nodeVersion": "${{ matrix.node-version }}",
+            "platform": "${{ runner.os }}",
+            "buildDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "runner": "${{ runner.name }}",
+            "workflow": "${{ github.workflow }}",
+            "runId": "${{ github.run_id }}"
+          }
+          EOF
+          echo "Build output for Node.js version ${{ matrix.node-version }}" > dist/output.txt
+          echo "Successfully built on ${{ runner.os }}" >> dist/output.txt
+          echo "Build completed at $(date)" >> dist/output.txt
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-18ff4fd-node-${{ matrix.node-version }}
+          path: dist/
+          retention-days: 30
+
